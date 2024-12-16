@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatter - Modern Chat App</title>
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --primary-color: #7C3AED;
+            --primary-light: #8B5CF6;
+            --primary-hover: #6D28D9;
+            --background: #F3F4F6;
+            --surface: #ffffff;
+            --text-primary: #1F2937;
+            --text-secondary: #4B5563;
+            --border-color: #E5E7EB;
+            --error-color: #EF4444;
+            --success-color: #10B981;
+            --accent-yellow: #FBBF24;
+            --accent-pink: #EC4899;
+        }
+
+        body {
+            background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            bottom: -8px;
+            left: 0;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .container, .users-container, .chat-container {
+            animation: slideUp 0.4s ease-out;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 450px;
+            margin: 50px auto;
+            padding: 2.5rem;
+        }
+
+        .users-container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 0;
+        }
+
+        .chat-container {
+            max-width: 1200px;
+            height: 90vh;
+            margin: 20px auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+        }
+
+        .message {
+            max-width: 65%;
+            padding: 1rem 1.25rem;
+            border-radius: 20px;
+            position: relative;
+            margin: 1rem 0;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .received {
+            background: white;
+            border-bottom-left-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .received::before {
+            left: -10px;
+            border-right: 20px solid white;
+            border-bottom-right-radius: 16px 14px;
+        }
+
+        .sent {
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 8px;
+            margin-left: auto;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2);
+        }
+
+        .sent::before {
+            right: -10px;
+            border-left: 20px solid var(--primary-color);
+            border-bottom-left-radius: 16px 14px;
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .chat-messages {
+            height: calc(90vh - 140px);
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .chat-user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .message-input-container {
+            padding: 1.25rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            position: relative;
+        }
+
+        .message-input {
+            flex-grow: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .back-button {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .users-list {
+            padding: 1rem;
+        }
+
+        .user-item {
+            padding: 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .user-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .online-status {
+            width: 10px;
+            height: 10px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 0.3rem;
+            margin: 1rem auto;
+            justify-content: center;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            to { transform: translateY(-4px); }
+        }
+
+        @media (max-width: 768px) {
+            .container,
+            .users-container,
+            .chat-container {
+                margin: 0;
+                height: 100vh;
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .message {
+                max-width: 80%;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Container -->
+    <div id="auth-container" class="container">
+        <div class="logo">
+            <span class="material-icons" style="font-size: 3rem; margin-right: 0.5rem;">chat</span>
+            Chatter
+        </div>
+        
+        <!-- Signup Form -->
+        <div id="signup-form">
+            <h2>Sign Up</h2>
+            <div class="form-group">
+                <label for="signup-email">
+                    <span class="material-icons">email</span> Email
+                </label>
+                <input type="email" id="signup-email" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-password">
+                    <span class="material-icons">lock</span> Password
+                </label>
+                <input type="password" id="signup-password" required>
+            </div>
+            <button onclick="signup()">
+                <span class="material-icons">person_add</span>
+                Sign Up
+            </button>
+            <div class="toggle-form">
+                Already have an account? <span onclick="toggleForms()">Sign In</span>
+            </div>
+            <div id="signup-error" class="error"></div>
+        </div>
+
+        <!-- Signin Form -->
+        <div id="signin-form" style="display: none;">
+            <h2>Sign In</h2>
+            <div class="form-group">
+                <label for="signin-email">
+                    <span class="material-icons">email</span> Email
+                </label>
+                <input type="email" id="signin-email" required>
+            </div>
+            <div class="form-group">
+                <label for="signin-password">
+                    <span class="material-icons">lock</span> Password
+                </label>
+                <input type="password" id="signin-password" required>
+            </div>
+            <button onclick="signin()">
+                <span class="material-icons">login</span>
+                Sign In
+            </button>
+            <div class="toggle-form">
+                Don't have an account? <span onclick="toggleForms()">Sign Up</span>
+            </div>
+            <div id="signin-error" class="error"></div>
+        </div>
+    </div>
+
+    <!-- Users Container -->
+    <div id="users-container" class="users-container" style="display: none;">
+        <div class="users-header">
+            <h2>Active Users</h2>
+            <div class="current-user" id="current-user-label"></div>
+            <button onclick="logout()">
+                <span class="material-icons">logout</span>
+                Logout
+            </button>
+        </div>
+        <div id="users-list" class="users-list"></div>
+    </div>
+
+    <!-- Chat Container -->
+    <div id="chat-container" class="chat-container" style="display: none;">
+        <div class="chat-header">
+            <div style="display: flex; align-items: center;">
+                <button onclick="backToUsers()" class="back-button">
+                    <span class="material-icons">arrow_back</span>
+                </button>
+                <div class="chat-user-info">
+                    <div class="online-status"></div>
+                    <span id="chat-recipient"></span>
+                </div>
+            </div>
+            <button onclick="logout()">
+                <span class="material-icons">logout</span>
+            </button>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="message-input-container">
+            <input type="text" id="message-input" class="message-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">
+                <span class="material-icons">send</span>
+            </button>
+        </div>
+
+    </div>
+    <div id="toast-container"></div>
+
+    <script>
+        // Configuration
+        const API_ENDPOINTS = {
+            SIGNUP: 'http://localhost:8000/api/v1/user/register',
+            SIGNIN: 'http://localhost:8000/api/v1/user/login',
+            GET_USERS: 'http://localhost:8000/api/v1/dev/all',
+            SEND_MESSAGE: 'http://localhost:8000/api/v1/message'
+        };
+
+        // State
+        let currentUser = null;
+        let selectedUser = null;
+        let pollInterval = null;
+        let messages = [];
+
+        // Utility Functions
+        function setLoading(element, isLoading) {
+            if (isLoading) {
+                element.disabled = true;
+                element.classList.add('loading');
+            } else {
+                element.disabled = false;
+                element.classList.remove('loading');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="material-icons">${type === 'success' ? 'check_circle' : 'error'}</span>
+                <span>${message}</span>
+            `;
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            if (!token || !user) {
+                logout();
+                return false;
+            }
+            
+            try {
+                currentUser = JSON.parse(user);
+                return true;
+            } catch (e) {
+                logout();
+                return false;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (checkAuth()) {
+                showUsersList();
+            }
+
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        // Auth Functions
+        async function signup() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const errorElement = document.getElementById('signup-error');
+            const button = document.querySelector('#signup-form button');
+
+            try {
+                setLoading(button, true);
+                const response = await fetch(API_ENDPOINTS.SIGNUP, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Signup failed');
+                }
+
+                currentUser = data.user;
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                showToast('Account created successfully!', 'success');
+                showUsersList();
+            } catch (error) {
+                errorElement.textContent = error.message;
+                showToast(error.message, 'error');
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function signin() {
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+            const errorElement = document.getElementById('signin-error');
+            const button = document.querySelector('#signin-form button');
+
+            try {
+                setLoading(button, true);
+                const response = await fetch(API_ENDPOINTS.SIGNIN, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Invalid credentials');
+                }
+
+                currentUser = data.user;
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                showToast('Welcome back!', 'success');
+                showUsersList();
+            } catch (error) {
+                errorElement.textContent = error.message;
+                showToast(error.message, 'error');
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            selectedUser = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            stopPolling();
+            showAuth();
+            clearInputs();
+            showToast('Logged out successfully', 'success');
+        }
+
+        // Users Functions
+        async function fetchUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(API_ENDPOINTS.GET_USERS, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+
+                const users = await response.json();
+                displayUsers(users);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                showToast('Failed to load users', 'error');
+            }
+        }
+
+        function displayUsers(users) {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+
+            users.forEach(user => {
+                if (user._id === currentUser._id) return;
+
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                const initials = user.email.split('@')[0].substring(0, 2).toUpperCase();
+                
+                userItem.innerHTML = `
+                    <div class="user-avatar">${initials}</div>
+                    <div class="user-info">
+                        <div class="user-email">${user.email}</div>
+                        <div class="online-status"></div>
+                    </div>
+                    <button onclick="selectUserAndStartChat('${user._id}', '${user.email}')">
+                        <span class="material-icons">chat</span>
+                        Chat
+                    </button>
+                `;
+                usersList.appendChild(userItem);
+            });
+        }
+
+        // Chat Functions
+        async function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            const sendButton = document.querySelector('.message-input-container button');
+
+            if (!message || !selectedUser) return;
+
+            try {
+                setLoading(sendButton, true);
+                const token = localStorage.getItem('token');
+                const response = await fetch(API_ENDPOINTS.SEND_MESSAGE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        user: currentUser._id,
+                        recipient: selectedUser._id,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to send message');
+                }
+
+                messageInput.value = '';
+                await loadMessages();
+            } catch (error) {
+                showToast('Failed to send message', 'error');
+            } finally {
+                setLoading(sendButton, false);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:8000/api/v1/message/${currentUser._id}/${selectedUser._id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load messages');
+                }
+
+                const data = await response.json();
+                messages = data.messages;
+                displayMessages(messages);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                showToast('Failed to load messages', 'error');
+            }
+        }
+
+        function displayMessages(messages) {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+
+            if (!messages || messages.length === 0) {
+                chatMessages.innerHTML = '<div class="no-messages">No messages yet</div>';
+                return;
+            }
+
+            messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${message.user._id === currentUser._id ? 'sent' : 'received'}`;
+                
+                messageElement.innerHTML = `
+                    <div class="message-content">${message.message}</div>
+                    <div class="message-time">${formatTimestamp(message.createdAt)}</div>
+                `;
+                
+                chatMessages.appendChild(messageElement);
+            });
+
+            scrollToBottom();
+        }
+
+        // UI Functions
+        function showUsersList() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('users-container').style.display = 'block';
+            document.getElementById('chat-container').style.display = 'none';
+            document.getElementById('current-user-label').textContent = `Logged in as: ${currentUser.email}`;
+            fetchUsers();
+        }
+
+        function showChat() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('users-container').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+            document.getElementById('chat-recipient').textContent = selectedUser.email;
+            loadMessages();
+            startPolling();
+        }
+
+        function showAuth() {
+            document.getElementById('auth-container').style.display = 'block';
+            document.getElementById('users-container').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'none';
+        }
+
+        function toggleForms() {
+            const signupForm = document.getElementById('signup-form');
+            const signinForm = document.getElementById('signin-form');
+            signupForm.style.display = signupForm.style.display === 'none' ? 'block' : 'none';
+            signinForm.style.display = signinForm.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function selectUserAndStartChat(userId, userEmail) {
+            selectedUser = {
+                _id: userId,
+                email: userEmail
+            };
+            showChat();
+        }
+
+        function backToUsers() {
+            stopPolling();
+            selectedUser = null;
+            showUsersList();
+        }
+
+        function startPolling() {
+            loadMessages();
+            pollInterval = setInterval(loadMessages, 3000);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function clearInputs() {
+            document.getElementById('signin-email').value = '';
+            document.getElementById('signin-password').value = '';
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-password').value = '';
+            document.getElementById('message-input').value = '';
+        }
+    </script>
+</body>
+</html>
